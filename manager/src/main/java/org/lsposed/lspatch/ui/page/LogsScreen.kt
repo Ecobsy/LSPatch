@@ -30,10 +30,12 @@ import org.lsposed.lspatch.ui.component.AnywhereDropdown
 import org.lsposed.lspatch.ui.viewmodel.logs.LogEntry
 import org.lsposed.lspatch.ui.viewmodel.logs.LogLevel
 import org.lsposed.lspatch.ui.viewmodel.logs.LogsViewModel
+import com.ramcosta.composedestinations.annotation.Destination
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Destination
 @Composable
 fun LogsScreen() {
     val viewModel: LogsViewModel = viewModel()
@@ -53,15 +55,16 @@ fun LogsScreen() {
                         Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                     }
                     
-                    Box {
-                        IconButton(onClick = { showDropdown = true }) {
-                            Icon(Icons.Default.BugReport, contentDescription = "Opciones")
+                    AnywhereDropdown(
+                        expanded = showDropdown,
+                        onDismissRequest = { showDropdown = false },
+                        onClick = { showDropdown = true },
+                        surface = {
+                            IconButton(onClick = { showDropdown = true }) {
+                                Icon(Icons.Default.BugReport, contentDescription = "Opciones")
+                            }
                         }
-                        
-                        AnywhereDropdown(
-                            expanded = showDropdown,
-                            onDismissRequest = { showDropdown = false }
-                        ) {
+                    ) {
                             DropdownMenuItem(
                                 text = { Text("Exportar logs") },
                                 onClick = {
