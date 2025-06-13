@@ -65,23 +65,22 @@ fun LogsScreen() {
                             }
                         }
                     ) {
-                            DropdownMenuItem(
-                                text = { Text("Exportar logs") },
-                                onClick = {
-                                    // TODO: Implementar exportación
-                                    showDropdown = false
-                                },
-                                leadingIcon = { Icon(Icons.Default.GetApp, contentDescription = null) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Limpiar logs") },
-                                onClick = {
-                                    viewModel.clearLogs()
-                                    showDropdown = false
-                                },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
-                            )
-                        }
+                        DropdownMenuItem(
+                            text = { Text("Exportar logs") },
+                            onClick = {
+                                // TODO: Implementar exportación
+                                showDropdown = false
+                            },
+                            leadingIcon = { Icon(Icons.Default.GetApp, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Limpiar logs") },
+                            onClick = {
+                                viewModel.clearLogs()
+                                showDropdown = false
+                            },
+                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+                        )
                     }
                 }
             )
