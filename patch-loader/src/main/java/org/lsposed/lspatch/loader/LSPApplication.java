@@ -17,6 +17,9 @@ import org.lsposed.lspatch.loader.util.FileUtils;
 import org.lsposed.lspatch.loader.util.XLog;
 import org.lsposed.lspatch.service.LocalApplicationService;
 import org.lsposed.lspatch.service.RemoteApplicationService;
+import org.lsposed.lspatch.compat.LSPatchCompat;
+import org.lsposed.lspatch.compat.LSPatchBridge;
+import org.lsposed.lspatch.compat.LSPatchFeatureValidator;
 import org.lsposed.lspd.core.Startup;
 import org.lsposed.lspd.service.ILSPApplicationService;
 import org.json.JSONObject;
@@ -77,25 +80,210 @@ public class LSPApplication {
 
         Log.d(TAG, "Initialize service client");
         ILSPApplicationService service;
+        ILSPApplicationService localService = null;
+        ILSPApplicationService remoteService = null;
+        
         if (config.optBoolean("useManager")) {
+            Log.i(TAG, "Using RemoteApplicationService (Manager mode)");
             service = new RemoteApplicationService(context);
+            remoteService = service;
         } else {
+            Log.i(TAG, "Using LocalApplicationService (Embedded mode)");
             service = new LocalApplicationService(context);
+            localService = service;
         }
+
+        // Initialize enhanced diagnostics service
+        initializeDiagnostics(context, localService, remoteService);
+
+        // Initialize LSPatch compatibility layer
+        initializeLSPatchCompatibility(context, service);
 
         disableProfile(context);
         Startup.initXposed(false, ActivityThread.currentProcessName(), context.getApplicationInfo().dataDir, service);
         Startup.bootstrapXposed();
+        
+        // Initialize LSPatch bridge after Xposed bootstrap
+        initializeLSPatchBridge(context, service);
+        
         // WARN: Since it uses `XResource`, the following class should not be initialized
         // before forkPostCommon is invoke. Otherwise, you will get failure of XResources
         Log.i(TAG, "Load modules");
         LSPLoader.initModules(appLoadedApk);
         Log.i(TAG, "Modules initialized");
 
+        // Generate compatibility report for debugging
+        generateCompatibilityReport(context, localService, remoteService);
+
         switchAllClassLoader();
         SigBypass.doSigBypass(context, config.optInt("sigBypassLevel"));
 
         Log.i(TAG, "LSPatch bootstrap completed");
+    }
+
+    /**
+     * Initialize enhanced diagnostics for module compatibility
+     */
+    private static void initializeDiagnostics(Context context, 
+                                            ILSPApplicationService localService,
+                                            ILSPApplicationService remoteService) {
+        try {
+            // Log enhanced initialization information
+            Log.i(TAG, "=== LSPatch Enhanced Diagnostics ===");
+            Log.i(TAG, "Process: " + ActivityThread.currentProcessName());
+            Log.i(TAG, "Package: " + context.getPackageName());
+            Log.i(TAG, "LSPatch Mode: " + (config.optBoolean("useManager") ? "Manager" : "Embedded"));
+            Log.i(TAG, "API Level: " + android.os.Build.VERSION.SDK_INT);
+            Log.i(TAG, "Architecture: " + System.getProperty("os.arch"));
+            
+            // Set comprehensive system properties for module detection
+            setEnhancedSystemProperties();
+            
+            Log.i(TAG, "Diagnostics initialization completed");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error during diagnostics initialization: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Set enhanced system properties for better module detection
+     */
+    private static void setEnhancedSystemProperties() {
+        try {
+            // Set LSPatch detection properties
+            System.setProperty("lspatch.initialized", "true");
+            System.setProperty("lspatch.bootstrap", "completed");
+            System.setProperty("lspatch.process", ActivityThread.currentProcessName());
+            
+            if (config.optBoolean("useManager")) {
+                System.setProperty("lspatch.mode", "manager");
+                System.setProperty("lspatch.manager", "true");
+                System.setProperty("lspatch.remote", "true");
+            } else {
+                System.setProperty("lspatch.mode", "embedded");
+                System.setProperty("lspatch.embedded", "true");
+                System.setProperty("lspatch.local", "true");
+            }
+            
+            // Set signature bypass level for module reference
+            int sigBypassLevel = config.optInt("sigBypassLevel", 0);
+            System.setProperty("lspatch.sigbypass.level", String.valueOf(sigBypassLevel));
+            
+            // Set debuggable flag
+            boolean debuggable = config.optBoolean("debuggable", false);
+            System.setProperty("lspatch.debuggable", String.valueOf(debuggable));
+            
+            Log.d(TAG, "Enhanced system properties set for module detection");
+            
+        } catch (Exception e) {
+            Log.w(TAG, "Could not set all enhanced system properties: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate compatibility report for advanced modules like WaEnhancer
+     */
+    private static void generateCompatibilityReport(Context context,
+                                                   ILSPApplicationService localService,
+                                                   ILSPApplicationService remoteService) {
+        try {
+            // Import diagnostics service
+            var diagnostics = new org.lsposed.lspatch.service.LSPatchModuleDiagnostics(
+                context, localService, remoteService);
+            
+            // Generate comprehensive report
+            String report = diagnostics.generateWaEnhancerCompatibilityReport();
+            
+            // Log report in chunks to avoid truncation
+            String[] lines = report.split("\n");
+            Log.i(TAG, "=== COMPATIBILITY REPORT START ===");
+            for (String line : lines) {
+                Log.i(TAG, line);
+            }
+            Log.i(TAG, "=== COMPATIBILITY REPORT END ===");
+            
+            // Log health status
+            var healthStatus = diagnostics.getHealthStatus();
+            Log.i(TAG, "LSPatch Health Status: " + healthStatus.overall);
+            Log.i(TAG, "- LSPatch Detected: " + healthStatus.lspatchDetected);
+            Log.i(TAG, "- WhatsApp Context: " + healthStatus.whatsappContext);
+            Log.i(TAG, "- WaEnhancer Detected: " + healthStatus.waenhancerDetected);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error generating compatibility report: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Initialize LSPatch compatibility layer for advanced modules
+     */
+    private static void initializeLSPatchCompatibility(Context context, ILSPApplicationService service) {
+        try {
+            Log.i(TAG, "Initializing LSPatch compatibility layer");
+            
+            // Initialize compatibility detection and features
+            LSPatchCompat.init(context);
+            
+            // Log compatibility information for debugging
+            LSPatchCompat.logCompatibilityInfo();
+            
+            Log.i(TAG, "LSPatch compatibility layer initialized");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error initializing LSPatch compatibility: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Initialize LSPatch bridge for module integration
+     */
+    private static void initializeLSPatchBridge(Context context, ILSPApplicationService service) {
+        try {
+            Log.i(TAG, "Initializing LSPatch bridge");
+            
+            // Initialize bridge for advanced module support
+            boolean bridgeInitialized = LSPatchBridge.initialize(context, service);
+            
+            if (bridgeInitialized) {
+                Log.i(TAG, "LSPatch bridge initialized successfully");
+                
+                // Log bridge status for debugging
+                LSPatchBridge.logBridgeStatus();
+                
+                // Run feature validation for comprehensive compatibility checking
+                runFeatureValidation(context.getClassLoader());
+                
+            } else {
+                Log.w(TAG, "LSPatch bridge initialization failed");
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error initializing LSPatch bridge: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Run comprehensive feature validation for module compatibility
+     */
+    private static void runFeatureValidation(ClassLoader classLoader) {
+        try {
+            Log.i(TAG, "Running LSPatch feature validation");
+            
+            // Validate all LSPatch features
+            var validationResults = LSPatchFeatureValidator.validateAllFeatures(classLoader);
+            
+            // Log validation report
+            LSPatchFeatureValidator.logValidationReport();
+            
+            // Get compatibility summary
+            var summary = LSPatchFeatureValidator.getCompatibilitySummary();
+            Log.i(TAG, "Feature compatibility: " + summary.getOverallStatus() + 
+                " (" + String.format("%.1f", summary.getCompatibilityPercentage()) + "% compatible)");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error during feature validation: " + e.getMessage());
+        }
     }
 
     private static Context createLoadedApkWithContext() {
