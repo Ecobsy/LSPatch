@@ -24,7 +24,6 @@ jobs:
         fetch-depth: 0
 
     - name: Write key
-      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
       run: |
         if [ ! -z "${{ secrets.KEY_STORE }}" ]; then
           echo androidStorePassword='${{ secrets.KEY_STORE_PASSWORD }}' >> gradle.properties
