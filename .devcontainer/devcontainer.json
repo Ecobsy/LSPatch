@@ -24,6 +24,18 @@
       "installTools": true
     },
     "ghcr.io/duduribeiro/devcontainer-features/neovim:1.0.1": {},
+    "ghcr.io/NordcomInc/devcontainer-features/android-sdk:1": {
+      "platform": "35",
+      "build_tools": "35.0.0"
+    },
+    "ghcr.io/devcontainers-extra/features/cmake:1": {},
+    "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {},
+    "ghcr.io/devcontainers-community/features/bazel:1": {},
+    "ghcr.io/devcontainers-extra/features/gradle-sdkman:2": {
+      "version": "8.13",
+      "jdkVer": "21",
+      "jdkDistro": "tem"
+    },
     "ghcr.io/duduribeiro/devcontainer-features/tmux:latest": {
       "version": "3.4"
     },
@@ -67,6 +79,5 @@
     }
   },
   "forwardPorts": [8888, 2222, 9090, 8080, 4433, 2121, 9000, 3333, 4444],
-  "remoteUser": "vscode",
-  "postCreateCommand": "chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh"
+  "remoteUser": "vscode"
 }
