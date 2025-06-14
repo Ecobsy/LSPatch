@@ -96,6 +96,9 @@ public class LSPatch {
     @Parameter(names = {"-m", "--embed"}, description = "Embed provided modules to apk")
     private List<String> modules = new ArrayList<>();
 
+    @Parameter(names = {"--embed-waenhancer"}, description = "Embed WaEnhancer module for WhatsApp (for embedded mode)")
+    private boolean embedWaEnhancer = false;
+
     private static final String ANDROID_MANIFEST_XML = "AndroidManifest.xml";
     private static final HashSet<String> ARCHES = new HashSet<>(Arrays.asList(
             "armeabi-v7a",
@@ -127,6 +130,14 @@ public class LSPatch {
         }
         if (!modules.isEmpty() && useManager) {
             logger.e("Should not use --embed and --manager at the same time\n");
+            help = true;
+        }
+        if (embedWaEnhancer && useManager) {
+            logger.e("Should not use --embed-waenhancer and --manager at the same time\n");
+            help = true;
+        }
+        if (embedWaEnhancer && !modules.isEmpty()) {
+            logger.e("Should not use --embed-waenhancer with other --embed modules\n");
             help = true;
         }
 

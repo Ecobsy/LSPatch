@@ -19,9 +19,19 @@ import org.lsposed.lspatch.service.LocalApplicationService;
 import org.lsposed.lspatch.service.RemoteApplicationService;
 import org.lsposed.lspatch.compat.LSPatchCompat;
 import org.lsposed.lspatch.compat.LSPatchBridge;
+import org.lsposed.lspatch.compat.LSPatchPreferences;
+import org.lsposed.lspatch.compat.LSPatchHookWrapper;
 import org.lsposed.lspatch.compat.LSPatchFeatureValidator;
-import org.lsposed.lspd.core.Startup;
-import org.lsposed.lspd.service.ILSPApplicationService;
+import org.lsposed.lspatch.service.LSPatchModuleDiagnostics;
+import org.lsposed.lspatch.service.LSPatchCompatibilityReporter;
+
+// Xposed framework imports for embedded module loading
+import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+// Reflection imports for dynamic module loading
+import java.lang.reflect.Method;
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -42,9 +52,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
-
-import de.robv.android.xposed.XposedHelpers;
-import hidden.HiddenApiBridge;
 
 /**
  * Created by Windysha
@@ -114,6 +121,9 @@ public class LSPApplication {
         Log.i(TAG, "Load modules");
         LSPLoader.initModules(appLoadedApk);
         Log.i(TAG, "Modules initialized");
+        
+        // Load embedded WaEnhancer if configured
+        loadEmbeddedWaEnhancer(context, appLoadedApk);
 
         // Generate compatibility report for debugging
         generateCompatibilityReport(context, localService, remoteService);
@@ -526,6 +536,67 @@ public class LSPApplication {
             } catch (Throwable e) {
                 Log.e(TAG, "Failed to disable profile file " + curProfileFile.getAbsolutePath(), e);
             }
+        }
+    }
+
+    /**
+     * Load embedded WaEnhancer module if configured and target app is WhatsApp
+     */
+    private static void loadEmbeddedWaEnhancer(Context context, LoadedApk appLoadedApk) {
+        try {
+            String packageName = appLoadedApk.getPackageName();
+            
+            // Check if target app is WhatsApp
+            if (!"com.whatsapp".equals(packageName) && !"com.whatsapp.w4b".equals(packageName)) {
+                return;
+            }
+            
+            // Check if WaEnhancer embedding is enabled
+            boolean waenhancerEnabled = config.optBoolean("waenhancer_embedded", false);
+            if (!waenhancerEnabled) {
+                Log.d(TAG, "WaEnhancer embedding not enabled");
+                return;
+            }
+            
+            Log.i(TAG, "Loading embedded WaEnhancer for " + packageName);
+            
+            // Initialize WaEnhancer compatibility layer
+            org.lsposed.lspatch.compat.LSPatchCompat.init(context);
+            
+            try {
+                // Load WaEnhancer main class
+                Class<?> waenhancerClass = Class.forName("com.wmods.wppenhacer.WppXposed", 
+                    true, appLoadedApk.getClassLoader());
+                
+                // Create instance and initialize
+                Object waenhancerInstance = waenhancerClass.newInstance();
+                
+                // Create LoadPackageParam for WaEnhancer
+                XC_LoadPackage.LoadPackageParam lpparam = new XC_LoadPackage.LoadPackageParam(
+                    XposedBridge.sLoadedPackageCallbacks);
+                lpparam.packageName = packageName;
+                lpparam.processName = ActivityThread.currentProcessName();
+                lpparam.classLoader = appLoadedApk.getClassLoader();
+                lpparam.appInfo = appLoadedApk.getApplicationInfo();
+                lpparam.isFirstApplication = true;
+                
+                // Call WaEnhancer's handleLoadPackage
+                Method handleLoadPackageMethod = waenhancerClass.getMethod("handleLoadPackage", 
+                    XC_LoadPackage.LoadPackageParam.class);
+                handleLoadPackageMethod.invoke(waenhancerInstance, lpparam);
+                
+                Log.i(TAG, "WaEnhancer loaded successfully in embedded mode");
+                
+            } catch (ClassNotFoundException e) {
+                Log.w(TAG, "WaEnhancer classes not found - module not embedded");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to load embedded WaEnhancer: " + e.getMessage());
+                Log.e(TAG, e);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error in loadEmbeddedWaEnhancer: " + e.getMessage());
+            Log.e(TAG, e);
         }
     }
 
