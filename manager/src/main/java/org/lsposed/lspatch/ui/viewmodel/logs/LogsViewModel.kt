@@ -40,7 +40,6 @@ class LogsViewModel : ViewModel() {
     }
 
     private fun getSystemLogs(): List<LogEntry> {
-        val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         val timestamp = System.currentTimeMillis()
         
         return listOf(

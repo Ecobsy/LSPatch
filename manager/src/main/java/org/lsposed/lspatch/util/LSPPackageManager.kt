@@ -43,7 +43,7 @@ object LSPPackageManager {
     @Parcelize
     class AppInfo(val app: ApplicationInfo, val label: String) : Parcelable {
         val isXposedModule: Boolean
-            get() = app.metaData?.get("xposedminversion") != null
+            get() = app.metaData?.containsKey("xposedminversion") == true
     }
 
     var appList by mutableStateOf(listOf<AppInfo>())
