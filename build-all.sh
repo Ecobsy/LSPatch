@@ -2,21 +2,27 @@
 
 set -e
 
-echo "🚀 Iniciando compilación completa de LSPatch..."
+echo "🚀 Iniciando compilación completa de LSPatch v2.0 Enhanced..."
+
+# Mostrar información del sistema
+echo "📋 Información del sistema:"
+echo "Java Version: $(java -version 2>&1 | head -n 1)"
+echo "Gradle Version: $(./gradlew --version | grep Gradle)"
+echo "Android SDK: $ANDROID_HOME"
+echo ""
 
 # Limpiar builds anteriores
 echo "🧹 Limpiando builds anteriores..."
 ./gradlew clean
 
-# Compilar todas las dependencias
-echo "📦 Compilando dependencias libxposed..."
-./gradlew :libxposed:api:build
-./gradlew :libxposed:api:checks:build
-./gradlew :libxposed:service:build
-./gradlew :libxposed:service:interface:build
+# Compilar dependencias mejoradas usando script específico
+echo "📦 Compilando dependencias integradas y mejoradas..."
+chmod +x build-dependencies.sh
+./build-dependencies.sh
 
-# Compilar módulos core
-echo "🔧 Compilando módulos core..."
+# Compilar módulos core con orden específico
+echo "🔧 Compilando módulos core en orden de dependencias..."
+./gradlew :share:build
 ./gradlew :apache:build
 ./gradlew :apkzlib:build
 ./gradlew :axml:build

@@ -99,6 +99,14 @@ public class LSPApplication {
             localService = service;
         }
 
+        // Initialize LSPatch Service Manager (NEW)
+        boolean serviceManagerInitialized = org.lsposed.lspatch.service.LSPatchServiceManager
+            .getInstance().initialize(context, service);
+        
+        if (!serviceManagerInitialized) {
+            Log.w(TAG, "LSPatch Service Manager initialization failed, continuing with basic functionality");
+        }
+
         // Initialize enhanced diagnostics service
         initializeDiagnostics(context, localService, remoteService);
 

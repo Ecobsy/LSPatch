@@ -127,37 +127,151 @@ public class LSPatchServiceShim {
      */
     public static boolean isLSPatchDexInjectionPresent() {
         try {
-            // Check for LSPatch-specific system properties that indicate dex injection
-            String[] dexProperties = {
+            // Enhanced LSPatch detection methods for WaEnhancer compatibility
+            
+            // Method 1: Check for enhanced LSPatch system properties
+            String[] enhancedDexProperties = {
+                "lspatch.initialized",
+                "lspatch.bridge.active", 
+                "lspatch.services.active",
+                "lspatch.noroot",
+                "lspatch.version",
                 "lspatch.dex.injected",
                 "lspatch.loader.injected", 
                 "lspatch.hook.enabled",
-                "lspatch.module.loaded"
+                "lspatch.module.loaded",
+                "lspatch.xposed.compatible",
+                "ro.lspatch.enabled"
             };
             
-            for (String prop : dexProperties) {
-                if ("true".equals(System.getProperty(prop))) {
-                    Log.d(TAG, "LSPatch dex injection detected via property: " + prop);
+            for (String prop : enhancedDexProperties) {
+                String value = System.getProperty(prop);
+                if ("true".equals(value) || (value != null && !value.isEmpty())) {
+                    Log.d(TAG, "LSPatch detected via enhanced property: " + prop + " = " + value);
                     return true;
                 }
             }
             
-            // Check for LSPatch-specific thread names
+            // Method 2: Check for LSPatch-specific thread names (enhanced)
             java.util.Set<Thread> allThreads = Thread.getAllStackTraces().keySet();
             for (Thread thread : allThreads) {
                 String threadName = thread.getName();
                 if (threadName != null && (threadName.contains("LSPatch") || 
-                                         threadName.contains("lspatch"))) {
-                    Log.d(TAG, "LSPatch dex injection detected via thread: " + threadName);
+                                         threadName.contains("lspatch") ||
+                                         threadName.contains("LSP-") ||
+                                         threadName.contains("XposedBridge"))) {
+                    Log.d(TAG, "LSPatch detected via enhanced thread: " + threadName);
                     return true;
                 }
             }
             
+            // Method 3: Check for LSPatch classes in classpath
+            try {
+                Class.forName("org.lsposed.lspatch.loader.LSPApplication");
+                Log.d(TAG, "LSPatch detected via LSPApplication class");
+                return true;
+            } catch (ClassNotFoundException ignored) {}
+            
+            try {
+                Class.forName("org.lsposed.lspatch.compat.LSPatchBridge");
+                Log.d(TAG, "LSPatch detected via LSPatchBridge class");
+                return true;
+            } catch (ClassNotFoundException ignored) {}
+            
+            try {
+                Class.forName("org.lsposed.lspatch.service.LSPatchServiceManager");
+                Log.d(TAG, "LSPatch detected via LSPatchServiceManager class");
+                return true;
+            } catch (ClassNotFoundException ignored) {}
+            
+            // Method 4: Check for LSPatch bridge initialization
+            try {
+                Class<?> bridgeClass = Class.forName("org.lsposed.lspatch.compat.LSPatchBridge");
+                java.lang.reflect.Method isInitializedMethod = bridgeClass.getMethod("isInitialized");
+                Boolean initialized = (Boolean) isInitializedMethod.invoke(null);
+                if (Boolean.TRUE.equals(initialized)) {
+                    Log.d(TAG, "LSPatch detected via bridge initialization check");
+                    return true;
+                }
+            } catch (Exception ignored) {}
+            
+            // Method 5: Check for XposedBridge with LSPatch modifications
+            try {
+                Class<?> xposedBridgeClass = Class.forName("de.robv.android.xposed.XposedBridge");
+                // Check if XposedBridge has been initialized by LSPatch
+                java.lang.reflect.Field disableHooksField = xposedBridgeClass.getDeclaredField("disableHooks");
+                disableHooksField.setAccessible(true);
+                boolean disableHooks = disableHooksField.getBoolean(null);
+                if (!disableHooks) {
+                    Log.d(TAG, "LSPatch detected via XposedBridge hooks enabled");
+                    return true;
+                }
+            } catch (Exception ignored) {}
+            
+            // Method 6: Check for LSPatch file markers
+            try {
+                android.content.Context context = getActivityThreadContext();
+                if (context != null) {
+                    // Check for LSPatch cache directory
+                    java.io.File lspatchCache = new java.io.File(context.getCacheDir(), "lspatch");
+                    if (lspatchCache.exists()) {
+                        Log.d(TAG, "LSPatch detected via cache directory");
+                        return true;
+                    }
+                    
+                    // Check for LSPatch logs directory
+                    java.io.File lspatchLogs = new java.io.File(context.getCacheDir(), "lspatch_logs");
+                    if (lspatchLogs.exists()) {
+                        Log.d(TAG, "LSPatch detected via logs directory");
+                        return true;
+                    }
+                    
+                    // Check for original APK asset
+                    try {
+                        context.getAssets().open("lspatch/origin.apk");
+                        Log.d(TAG, "LSPatch detected via origin APK asset");
+                        return true;
+                    } catch (java.io.IOException ignored) {}
+                }
+            } catch (Exception ignored) {}
+            
+            // Method 7: Check for LSPatch service manager
+            try {
+                Class<?> serviceManagerClass = Class.forName("org.lsposed.lspatch.service.LSPatchServiceManager");
+                java.lang.reflect.Method getInstanceMethod = serviceManagerClass.getMethod("getInstance");
+                Object instance = getInstanceMethod.invoke(null);
+                java.lang.reflect.Method isInitializedMethod = instance.getClass().getMethod("isInitialized");
+                Boolean initialized = (Boolean) isInitializedMethod.invoke(instance);
+                if (Boolean.TRUE.equals(initialized)) {
+                    Log.d(TAG, "LSPatch detected via service manager");
+                    return true;
+                }
+            } catch (Exception ignored) {}
+            
             return false;
             
         } catch (Exception e) {
-            Log.w(TAG, "Error checking LSPatch dex injection: " + e.getMessage());
+            Log.w(TAG, "Error in enhanced LSPatch detection: " + e.getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Get current context using ActivityThread reflection
+     */
+    private static android.content.Context getActivityThreadContext() {
+        try {
+            Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+            java.lang.reflect.Method currentActivityThreadMethod = 
+                activityThreadClass.getMethod("currentActivityThread");
+            Object activityThread = currentActivityThreadMethod.invoke(null);
+            
+            java.lang.reflect.Method getApplicationMethod = 
+                activityThreadClass.getMethod("getApplication");
+            return (android.content.Context) getApplicationMethod.invoke(activityThread);
+            
+        } catch (Exception e) {
+            return null;
         }
     }
     
