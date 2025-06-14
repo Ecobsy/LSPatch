@@ -24,8 +24,9 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 
 import androidx.annotation.NonNull;
@@ -39,8 +40,8 @@ import org.lsposed.manager.receivers.LSPManagerServiceHolder;
 import org.lsposed.manager.ui.dialog.BlurBehindDialogBuilder;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.Executor;
 
-@SuppressWarnings("deprecation")
 public class CompileDialogFragment extends AppCompatDialogFragment {
     public static void speed(FragmentManager fragmentManager, ApplicationInfo info) {
         CompileDialogFragment fragment = new CompileDialogFragment();
@@ -68,23 +69,33 @@ public class CompileDialogFragment extends AppCompatDialogFragment {
                 .setView(binding.getRoot());
 
         var alertDialog = builder.create();
-        new CompileTask(this).executeOnExecutor(App.getExecutorService(), appInfo.packageName);
+        new CompileTask(this).execute(appInfo.packageName);
         return alertDialog;
     }
 
-    private static class CompileTask extends AsyncTask<String, Void, Throwable> {
+    private static class CompileTask {
 
         WeakReference<CompileDialogFragment> outerRef;
+        private final Executor executor;
+        private final Handler mainHandler;
 
         CompileTask(CompileDialogFragment fragment) {
             outerRef = new WeakReference<>(fragment);
+            executor = App.getExecutorService();
+            mainHandler = new Handler(Looper.getMainLooper());
         }
 
-        @Override
-        protected Throwable doInBackground(String... commands) {
+        protected void execute(String packageName) {
+            executor.execute(() -> {
+                Throwable result = doInBackground(packageName);
+                mainHandler.post(() -> onPostExecute(result));
+            });
+        }
+
+        protected Throwable doInBackground(String packageName) {
             try {
-                LSPManagerServiceHolder.getService().clearApplicationProfileData(commands[0]);
-                if (LSPManagerServiceHolder.getService().performDexOptMode(commands[0])) {
+                LSPManagerServiceHolder.getService().clearApplicationProfileData(packageName);
+                if (LSPManagerServiceHolder.getService().performDexOptMode(packageName)) {
                     return null;
                 } else {
                     return new UnknownError();
@@ -94,7 +105,6 @@ public class CompileDialogFragment extends AppCompatDialogFragment {
             }
         }
 
-        @Override
         protected void onPostExecute(Throwable result) {
             Context context = App.getInstance();
             String text;
