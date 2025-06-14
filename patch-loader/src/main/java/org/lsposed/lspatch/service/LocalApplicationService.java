@@ -258,12 +258,18 @@ public class LocalApplicationService extends ILSPApplicationService.Stub {
      */
     public String getLogStatistics() {
         if (logService != null) {
-            Map<String, Object> stats = logService.getLogStatistics();
+            LSPatchLogService.LogStatistics stats = logService.getLogStatistics();
             StringBuilder sb = new StringBuilder();
             sb.append("=== Log Statistics ===\n");
-            for (Map.Entry<String, Object> entry : stats.entrySet()) {
-                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-            }
+            sb.append("totalEntries: ").append(stats.totalEntries).append("\n");
+            sb.append("maxEntries: ").append(stats.maxEntries).append("\n");
+            sb.append("logLevel: ").append(stats.logLevel).append("\n");
+            sb.append("persistToDisk: ").append(stats.persistToDisk).append("\n");
+            sb.append("initialized: ").append(stats.initialized).append("\n");
+            sb.append("debugCount: ").append(stats.debugCount).append("\n");
+            sb.append("infoCount: ").append(stats.infoCount).append("\n");
+            sb.append("warnCount: ").append(stats.warnCount).append("\n");
+            sb.append("errorCount: ").append(stats.errorCount).append("\n");
             return sb.toString();
         }
         return "Log service not available";

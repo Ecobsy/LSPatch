@@ -525,7 +525,7 @@ public class LSPatchModuleService {
     public static class ModuleInfo {
         public String modulePath;
         public String packageName;
-        public org.lsposed.lspatch.util.PreLoadedApk preLoadedApk;
+        public org.lsposed.lspd.models.PreLoadedApk preLoadedApk;
         public long loadTime;
         public boolean isActive;
         public boolean isLegacy;

@@ -186,7 +186,7 @@ public class LSPatchLogService {
                 return; // Skip this log entry
             }
             
-            String processName = getCurrentProcessName();
+            String processName = android.app.ActivityThread.currentProcessName();
             
             ModuleLogEntry entry = new ModuleLogEntry(
                 System.currentTimeMillis(),
@@ -440,7 +440,7 @@ public class LSPatchLogService {
             try (FileWriter writer = new FileWriter(exportFile)) {
                 writer.write("LSPatch Module Logs Export\n");
                 writer.write("Generated: " + new Date() + "\n");
-                writer.write("Process: " + getCurrentProcessName() + "\n");
+                writer.write("Process: " + android.app.ActivityThread.currentProcessName() + "\n");
                 writer.write("Package: " + (context != null ? context.getPackageName() : "unknown") + "\n");
                 writer.write("=====================================\n\n");
                 

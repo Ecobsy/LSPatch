@@ -228,7 +228,7 @@ public class LSPatchServiceManager {
             switch (operation) {
                 case "log":
                     if (params.length >= 2) {
-                        logService.log((String) params[0], (String) params[1]);
+                        logService.logModule("INFO", "LSPatchService", (String) params[0], (String) params[1]);
                     }
                     return true;
                     
