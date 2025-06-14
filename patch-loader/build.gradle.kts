@@ -33,7 +33,7 @@ androidComponents.onVariants { variant ->
 
     task<Copy>("copyDex$variantCapped") {
         dependsOn("assemble$variantCapped")
-        from("$buildDir/intermediates/dex/${variant.name}/mergeDex$variantCapped/classes.dex")
+        from("${layout.buildDirectory.get().asFile}/intermediates/dex/${variant.name}/mergeDex$variantCapped/classes.dex")
         rename("classes.dex", "loader.dex")
         into("${rootProject.projectDir}/out/assets/${variant.name}/lspatch")
     }
@@ -44,7 +44,7 @@ androidComponents.onVariants { variant ->
         val libDir = variant.name + "/strip${variantCapped}DebugSymbols"
         from(
             fileTree(
-                "dir" to "$buildDir/intermediates/stripped_native_libs/$libDir/out/lib",
+                "dir" to "${layout.buildDirectory.get().asFile}/intermediates/stripped_native_libs/$libDir/out/lib",
                 "include" to listOf("**/liblspatch.so")
             )
         )

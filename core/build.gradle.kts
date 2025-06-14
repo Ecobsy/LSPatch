@@ -83,7 +83,6 @@ subprojects {
         extensions.configure(CommonExtension::class.java) {
             compileSdk = androidCompileSdkVersion
             ndkVersion = androidCompileNdkVersion
-            buildToolsVersion = androidBuildToolsVersion
 
             externalNativeBuild {
                 cmake {

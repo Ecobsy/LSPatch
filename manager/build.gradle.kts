@@ -66,8 +66,13 @@ afterEvaluate {
             dependsOn(":meta-loader:copy$variantCapped")
             dependsOn(":patch-loader:copy$variantCapped")
             tasks["merge${variantCapped}Assets"].dependsOn(this)
+            
+            // Fix lint dependency issues by explicitly declaring dependencies
+            tasks.findByName("lintAnalyze$variantCapped")?.dependsOn(this)
+            tasks.findByName("generateDebugLintReportModel")?.dependsOn(this)
+            tasks.findByName("lint")?.dependsOn(this)
 
-            into("$buildDir/intermediates/assets/$variantLowered/merge${variantCapped}Assets")
+            into("${layout.buildDirectory.get().asFile}/intermediates/assets/$variantLowered/merge${variantCapped}Assets")
             from("${rootProject.projectDir}/out/assets/${variant.name}")
         }
 

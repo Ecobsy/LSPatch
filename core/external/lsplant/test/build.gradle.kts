@@ -15,7 +15,6 @@ android {
     namespace = "org.lsposed.lsplant.test"
     compileSdk = androidCompileSdkVersion
     ndkVersion = androidNdkVersion
-    buildToolsVersion = androidBuildToolsVersion
 
     buildFeatures {
         buildConfig = false

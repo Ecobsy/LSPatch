@@ -17,7 +17,6 @@ val androidCmakeVersion: String by rootProject.extra
 android {
     compileSdk = androidCompileSdkVersion
     ndkVersion = androidNdkVersion
-    buildToolsVersion = androidBuildToolsVersion
 
     buildFeatures {
         buildConfig = false

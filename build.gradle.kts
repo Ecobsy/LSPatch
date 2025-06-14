@@ -109,14 +109,15 @@ fun Project.configureBaseExtension() {
                         "-fomit-frame-pointer",
                         "-Wno-builtin-macro-redefined",
                         "-Wno-unused-value",
+                        "-Wno-unused-variable",
+                        "-Wno-extra-semi",
+                        "-Wno-shift-count-overflow",
                         "-D__FILE__=__FILE_NAME__",
                     )
                     cppFlags("-std=c++20", *flags)
                     cFlags("-std=c18", *flags)
                     arguments(
                         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
-                        "-DVERSION_CODE=$verCode",
-                        "-DVERSION_NAME=$verName",
                     )
                 }
             }
@@ -155,7 +156,7 @@ fun Project.configureBaseExtension() {
                             "-fno-asynchronous-unwind-tables",
                             "-flto=thin",
                             "-Wl,--thinlto-cache-policy,cache_size_bytes=300m",
-                            "-Wl,--thinlto-cache-dir=${buildDir.absolutePath}/.lto-cache",
+                            "-Wl,--thinlto-cache-dir=${layout.buildDirectory.get().asFile.absolutePath}/.lto-cache",
                         )
                         cppFlags.addAll(flags)
                         cFlags.addAll(flags)
@@ -169,7 +170,7 @@ fun Project.configureBaseExtension() {
                                 "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=$configFlags",
                                 "-DCMAKE_C_FLAGS_RELEASE=$configFlags",
                                 "-DCMAKE_C_FLAGS_RELWITHDEBINFO=$configFlags",
-                                "-DDEBUG_SYMBOLS_PATH=${buildDir.absolutePath}/symbols",
+                                "-DDEBUG_SYMBOLS_PATH=${layout.buildDirectory.get().asFile.absolutePath}/symbols",
                             )
                         )
                     }
@@ -190,7 +191,7 @@ fun Project.configureBaseExtension() {
                 "build-tools/${androidBuildToolsVersion}/aapt2"
             )
             val zip = java.nio.file.Paths.get(
-                project.buildDir.path,
+                layout.buildDirectory.get().asFile.path,
                 "intermediates",
                 "optimized_processed_res",
                 "release",
@@ -198,7 +199,7 @@ fun Project.configureBaseExtension() {
                 "resources-release-optimize.ap_"
             )
             val optimized = File("${zip}.opt")
-            val cmd = exec {
+            val execResult = providers.exec {
                 commandLine(
                     aapt2, "optimize",
                     "--collapse-resource-names",
@@ -208,7 +209,7 @@ fun Project.configureBaseExtension() {
                 )
                 isIgnoreExitValue = false
             }
-            if (cmd.exitValue == 0) {
+            if (execResult.result.get().exitValue == 0) {
                 delete(zip)
                 optimized.renameTo(zip.toFile())
             }

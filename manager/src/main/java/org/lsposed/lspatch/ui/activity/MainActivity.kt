@@ -55,9 +55,15 @@ private fun BottomBar(navController: NavHostController) {
         ?: NavGraphs.root.startAppDestination
     var topDestination by rememberSaveable { mutableStateOf(currentDestination.route) }
     LaunchedEffect(currentDestination) {
-        val queue = navController.currentBackStack.value
-        if (queue.size == 2) topDestination = queue[1].destination.route!!
-        else if (queue.size > 2) topDestination = queue[2].destination.route!!
+        // Use a safer approach to get the back stack entry
+        val currentEntry = navController.currentBackStackEntry
+        val previousEntry = navController.previousBackStackEntry
+        
+        if (currentEntry != null && previousEntry != null) {
+            topDestination = previousEntry.destination.route ?: currentDestination.route
+        } else {
+            topDestination = currentDestination.route
+        }
     }
 
     NavigationBar(tonalElevation = 8.dp) {

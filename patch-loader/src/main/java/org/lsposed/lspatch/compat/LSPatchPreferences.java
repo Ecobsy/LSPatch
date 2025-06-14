@@ -106,7 +106,9 @@ public class LSPatchPreferences {
         // Fallback to shared preferences if available
         if (context != null) {
             try {
-                sharedPrefs = context.getSharedPreferences(prefsName, Context.MODE_WORLD_READABLE);
+                // Use MODE_PRIVATE instead of deprecated MODE_WORLD_READABLE for security
+                // If cross-process access is needed, use ContentProvider or other secure methods
+                sharedPrefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE);
                 Log.d(TAG, "Using SharedPreferences fallback for " + packageName);
             } catch (Exception e) {
                 Log.w(TAG, "SharedPreferences fallback failed: " + e.getMessage());
@@ -121,7 +123,8 @@ public class LSPatchPreferences {
         // In embedded mode, try SharedPreferences first
         if (context != null) {
             try {
-                sharedPrefs = context.getSharedPreferences(prefsName, Context.MODE_WORLD_READABLE);
+                // Use MODE_PRIVATE instead of deprecated MODE_WORLD_READABLE for security
+                sharedPrefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE);
                 Log.d(TAG, "Using SharedPreferences for embedded mode: " + packageName);
                 return;
             } catch (Exception e) {

@@ -4,21 +4,19 @@ import java.nio.file.Paths
 buildscript {    
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         //
         // https://developer.android.com/studio/releases/gradle-plugin#updating-gradle
         //
-        // Notice that 4.0.0 here is the version of [Android Gradle Plugin]
-        // According to URL above you will need Gradle 6.1 or higher
-        //
-        classpath "com.android.tools.build:gradle:4.1.1"
+        // Updated Android Gradle Plugin to current version
+        classpath "com.android.tools.build:gradle:8.10.1"
     }
 }
 repositories {
     google()
-    jcenter()
+    mavenCentral()
 }
 
 // Project's root where CMakeLists.txt exists: rootDir/support/.cxx -> rootDir
@@ -28,7 +26,7 @@ println("rootDir: ${rootDir}")
 // Output: Shared library (.so) for Android 
 apply plugin: "com.android.library"
 android {
-    compileSdkVersion 25    // Android 7.0
+    compileSdkVersion 35    // Updated to match project standard
 
     // Target ABI
     //  - This option controls target platform of module
@@ -43,11 +41,11 @@ android {
             include  "arm64-v8a", "armeabi-v7a", "x86_64"
         }
     }
-    ndkVersion "21.3.6528147" // ANDROID_NDK_HOME is deprecated. Be explicit
+    ndkVersion "29.0.13113456" // Updated to match project NDK version
 
     defaultConfig {
-        minSdkVersion 21    // Android 5.0+
-        targetSdkVersion 25 // Follow Compile SDK
+        minSdkVersion 28    // Updated to match project minimum
+        targetSdkVersion 35 // Updated to match project target
         versionCode 34      // Follow release count
         versionName "7.1.2" // Follow Official version
         

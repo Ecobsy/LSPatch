@@ -88,7 +88,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     }
 }
 
-private val listener: (Int, Int) -> Unit = { _, grantResult ->
+private val onRequestPermissionResultListener = Shizuku.OnRequestPermissionResultListener { _, grantResult ->
     ShizukuApi.isPermissionGranted = grantResult == PackageManager.PERMISSION_GRANTED
 }
 
@@ -96,11 +96,11 @@ private val listener: (Int, Int) -> Unit = { _, grantResult ->
 @Composable
 private fun ShizukuCard() {
     LaunchedEffect(Unit) {
-        Shizuku.addRequestPermissionResultListener(listener)
+        Shizuku.addRequestPermissionResultListener(onRequestPermissionResultListener)
     }
     DisposableEffect(Unit) {
         onDispose {
-            Shizuku.removeRequestPermissionResultListener(listener)
+            Shizuku.removeRequestPermissionResultListener(onRequestPermissionResultListener)
         }
     }
 

@@ -37,7 +37,6 @@ fun findInPath(executable: String): String? {
 android {
     compileSdk = androidCompileSdkVersion
     ndkVersion = androidNdkVersion
-    buildToolsVersion = androidBuildToolsVersion
 
     buildFeatures {
         buildConfig = false

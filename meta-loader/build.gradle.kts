@@ -25,8 +25,8 @@ androidComponents.onVariants { variant ->
     task<Copy>("copyDex$variantCapped") {
         dependsOn("assemble$variantCapped")
         val dexOutPath = if (variant.buildType == "release")
-            "$buildDir/intermediates/dex/$variantLowered/minify${variantCapped}WithR8" else
-            "$buildDir/intermediates/dex/$variantLowered/mergeDex$variantCapped"
+            "${layout.buildDirectory.get().asFile}/intermediates/dex/$variantLowered/minify${variantCapped}WithR8" else
+            "${layout.buildDirectory.get().asFile}/intermediates/dex/$variantLowered/mergeDex$variantCapped"
         from(dexOutPath)
         rename("classes.dex", "metaloader.dex")
         into("${rootProject.projectDir}/out/assets/${variant.name}/lspatch")

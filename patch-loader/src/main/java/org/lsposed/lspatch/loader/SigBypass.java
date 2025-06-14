@@ -35,7 +35,22 @@ public class SigBypass {
     private static final Map<String, String> signatures = new HashMap<>();
 
     private static void replaceSignature(Context context, PackageInfo packageInfo) {
-        boolean hasSignature = (packageInfo.signatures != null && packageInfo.signatures.length != 0) || packageInfo.signingInfo != null;
+        // Use modern SigningInfo API for Android P+ (API 28+)
+        boolean hasSignature = packageInfo.signingInfo != null;
+        
+        // For compatibility, also check legacy signatures field using reflection to avoid deprecation warnings
+        if (!hasSignature) {
+            try {
+                // Use reflection to access deprecated signatures field
+                java.lang.reflect.Field signaturesField = PackageInfo.class.getDeclaredField("signatures");
+                signaturesField.setAccessible(true);
+                android.content.pm.Signature[] legacySignatures = (android.content.pm.Signature[]) signaturesField.get(packageInfo);
+                hasSignature = legacySignatures != null && legacySignatures.length > 0;
+            } catch (Exception e) {
+                // Ignore reflection errors
+            }
+        }
+        
         if (hasSignature) {
             String packageName = packageInfo.packageName;
             String replacement = signatures.get(packageName);
@@ -58,15 +73,26 @@ public class SigBypass {
                 signatures.put(packageName, replacement);
             }
             if (replacement != null) {
-                if (packageInfo.signatures != null && packageInfo.signatures.length > 0) {
-                    XLog.d(TAG, "Replace signature info for `" + packageName + "` (method 1)");
-                    packageInfo.signatures[0] = new Signature(replacement);
-                }
+                // Prefer modern SigningInfo API first
                 if (packageInfo.signingInfo != null) {
-                    XLog.d(TAG, "Replace signature info for `" + packageName + "` (method 2)");
+                    XLog.d(TAG, "Replace signature info for `" + packageName + "` (modern method)");
                     Signature[] signaturesArray = packageInfo.signingInfo.getApkContentsSigners();
                     if (signaturesArray != null && signaturesArray.length > 0) {
                         signaturesArray[0] = new Signature(replacement);
+                    }
+                }
+                // Fallback to legacy signatures field using reflection to avoid deprecation warnings
+                else {
+                    try {
+                        java.lang.reflect.Field signaturesField = PackageInfo.class.getDeclaredField("signatures");
+                        signaturesField.setAccessible(true);
+                        android.content.pm.Signature[] legacySignatures = (android.content.pm.Signature[]) signaturesField.get(packageInfo);
+                        if (legacySignatures != null && legacySignatures.length > 0) {
+                            XLog.d(TAG, "Replace signature info for `" + packageName + "` (legacy method)");
+                            legacySignatures[0] = new Signature(replacement);
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to replace signature using reflection", e);
                     }
                 }
             }
