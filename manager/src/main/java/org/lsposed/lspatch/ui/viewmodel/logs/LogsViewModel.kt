@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.lsposed.lspatch.util.LogCollector
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -21,6 +22,8 @@ class LogsViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val logCollector = LogCollector()
+
     init {
         loadLogs()
     }
@@ -29,22 +32,75 @@ class LogsViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             
-            val systemLogs = getSystemLogs()
-            val lspatchDiagnostics = getLSPatchDiagnostics()
-            val moduleCompatibilityInfo = getModuleCompatibilityInfo()
+            try {
+                // Load demo logs as base (for compatibility and development)
+                val demoLogs = getDemoLogs()
+                _logs.value = demoLogs.sortedByDescending { it.timestamp }
+                
+            } catch (e: Exception) {
+                val errorLogs = listOf(
+                    LogEntry(
+                        timestamp = System.currentTimeMillis(),
+                        level = LogLevel.ERROR,
+                        tag = "LogsViewModel",
+                        message = "Failed to load logs: ${e.message}",
+                        details = "Error details: ${e.stackTraceToString()}"
+                    )
+                )
+                _logs.value = errorLogs
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * Load logs with context for better log collection including real system logs
+     */
+    fun loadLogsWithContext(context: Context) {
+        viewModelScope.launch {
+            _isLoading.value = true
             
-            val allLogs = mutableListOf<LogEntry>().apply {
-                addAll(systemLogs)
-                addAll(lspatchDiagnostics)
-                addAll(moduleCompatibilityInfo)
-            }.sortedByDescending { it.timestamp }
-            
-            _logs.value = allLogs
-            _isLoading.value = false
+            try {
+                // Collect real system logs
+                val systemLogs = logCollector.collectLSPatchLogs(context, maxLines = 300)
+                
+                // Collect module diagnostics
+                val moduleDiagnostics = logCollector.collectModuleDiagnostics(context)
+                
+                // Get demo/compatibility logs
+                val demoLogs = getDemoLogs()
+                
+                // Combine all logs, prioritizing real logs
+                val allLogs = (systemLogs + moduleDiagnostics + demoLogs)
+                    .distinctBy { "${it.timestamp}-${it.tag}-${it.message}" } // Remove duplicates
+                    .sortedByDescending { it.timestamp }
+                    .take(1000) // Limit to prevent memory issues
+                
+                _logs.value = allLogs
+                
+            } catch (e: Exception) {
+                val errorLogs = listOf(
+                    LogEntry(
+                        timestamp = System.currentTimeMillis(),
+                        level = LogLevel.ERROR,
+                        tag = "LogsViewModel",
+                        message = "Failed to load logs with context: ${e.message}",
+                        details = "Falling back to demo logs. Error: ${e.stackTraceToString()}"
+                    )
+                ) + getDemoLogs()
+                
+                _logs.value = errorLogs
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
-    private fun getSystemLogs(): List<LogEntry> {
+    /**
+     * Demo logs for development and as base content
+     */
+    private fun getDemoLogs(): List<LogEntry> {
         val timestamp = System.currentTimeMillis()
         
         return listOf(
@@ -208,44 +264,76 @@ class LogsViewModel : ViewModel() {
     fun refreshLogs() {
         loadLogs()
     }
+    
+    /**
+     * Refresh logs with context (preferred method)
+     */
+    fun refreshLogsWithContext(context: Context) {
+        loadLogsWithContext(context)
+    }
 
     fun clearLogs() {
         _logs.value = emptyList()
     }
 
+    /**
+     * Export logs with enhanced formatting and real log data
+     */
     fun exportLogs(): String {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
         return buildString {
-            appendLine("=== LSPatch Logs Export ===")
+            appendLine("=== LSPatch Enhanced Logs Export ===")
             appendLine("Generated: ${dateFormat.format(Date())}")
+            appendLine("Log Count: ${_logs.value.size}")
+            appendLine("Export Version: 2.0")
             appendLine()
             
-            _logs.value.forEach { log ->
-                appendLine("[${dateFormat.format(Date(log.timestamp))}] ${log.level.name}/${log.tag}: ${log.message}")
-                if (log.details.isNotBlank()) {
-                    log.details.lines().forEach { line ->
-                        appendLine("    $line")
+            // Group logs by tag for better organization
+            val logsByTag = _logs.value.groupBy { it.tag }
+            
+            for ((tag, tagLogs) in logsByTag.entries.sortedBy { it.key }) {
+                appendLine("=== TAG: $tag (${tagLogs.size} entries) ===")
+                
+                for (log in tagLogs.sortedByDescending { it.timestamp }) {
+                    appendLine("[${dateFormat.format(Date(log.timestamp))}] ${log.level.name}: ${log.message}")
+                    if (log.details.isNotBlank()) {
+                        log.details.lines().forEach { line ->
+                            appendLine("    $line")
+                        }
                     }
                     appendLine()
                 }
+                appendLine()
             }
+            
+            appendLine("=== Export Summary ===")
+            appendLine("Total Tags: ${logsByTag.size}")
+            appendLine("Level Breakdown:")
+            val levelCounts = _logs.value.groupingBy { it.level }.eachCount()
+            for ((level, count) in levelCounts) {
+                appendLine("  ${level.name}: $count")
+            }
+            appendLine()
+            appendLine("Note: This export includes both real system logs and demo logs.")
+            appendLine("For real-time monitoring use: adb logcat LSPatch:* *:S")
         }
     }
 
+    /**
+     * Export logs to file with sharing capability
+     */
     fun exportLogsToFile(context: Context? = null) {
         viewModelScope.launch {
             try {
                 val logsContent = exportLogs()
                 val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
                 val timestamp = dateFormat.format(Date())
-                val fileName = "lspatch_logs_$timestamp.txt"
+                val fileName = "lspatch_enhanced_logs_$timestamp.txt"
                 
-                // Si tenemos contexto, intentamos usar el directorio de archivos de la app
                 context?.let { ctx ->
                     val file = File(ctx.getExternalFilesDir(null), fileName)
                     file.writeText(logsContent)
                     
-                    // Crear Intent para compartir el archivo
                     val uri = FileProvider.getUriForFile(
                         ctx,
                         "${ctx.packageName}.fileprovider",
@@ -255,17 +343,16 @@ class LogsViewModel : ViewModel() {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_SUBJECT, "LSPatch Logs - $timestamp")
-                        putExtra(Intent.EXTRA_TEXT, "Logs exportados desde LSPatch Manager")
+                        putExtra(Intent.EXTRA_SUBJECT, "LSPatch Enhanced Logs - $timestamp")
+                        putExtra(Intent.EXTRA_TEXT, "Enhanced logs exported from LSPatch Manager with real system log integration")
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     
-                    val chooserIntent = Intent.createChooser(shareIntent, "Exportar logs")
+                    val chooserIntent = Intent.createChooser(shareIntent, "Export Enhanced Logs")
                     chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     ctx.startActivity(chooserIntent)
                 }
             } catch (e: Exception) {
-                // Log the error - en una implementación real podríamos mostrar un mensaje de error
                 e.printStackTrace()
             }
         }

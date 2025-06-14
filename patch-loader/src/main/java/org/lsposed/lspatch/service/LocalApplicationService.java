@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipFile;
 
 public class LocalApplicationService extends ILSPApplicationService.Stub {
@@ -27,9 +28,14 @@ public class LocalApplicationService extends ILSPApplicationService.Stub {
 
     private final List<Module> modules = new ArrayList<>();
     private final Context context;
+    private LSPatchLogService logService;
 
     public LocalApplicationService(Context context) {
         this.context = context;
+        
+        // Initialize log service for capturing module logs
+        this.logService = LSPatchLogService.getInstance();
+        this.logService.attachToLSPatchService(this);
         
         // Set system properties to indicate LSPatch environment for module detection
         setLSPatchSystemProperties();
@@ -216,12 +222,60 @@ public class LocalApplicationService extends ILSPApplicationService.Stub {
                 return false;
             }
             
+            // Log health check via log service
+            if (logService != null) {
+                logService.logModule("INFO", TAG, 
+                    "Health check passed - Service functional with " + modulesList.size() + " modules",
+                    "LSPatch-Health");
+            }
+            
             Log.i(TAG, "Health check passed: Service is functional");
             return true;
             
         } catch (Exception e) {
             Log.e(TAG, "Health check failed with exception: " + e.getMessage());
+            if (logService != null) {
+                logService.logModule("ERROR", TAG, 
+                    "Health check failed: " + e.getMessage(),
+                    "LSPatch-Health", e);
+            }
             return false;
+        }
+    }
+    
+    /**
+     * Get captured module logs
+     */
+    public String getModuleLogs() {
+        if (logService != null) {
+            return logService.exportLogsToString();
+        }
+        return "Log service not available";
+    }
+    
+    /**
+     * Get log statistics
+     */
+    public String getLogStatistics() {
+        if (logService != null) {
+            Map<String, Object> stats = logService.getLogStatistics();
+            StringBuilder sb = new StringBuilder();
+            sb.append("=== Log Statistics ===\n");
+            for (Map.Entry<String, Object> entry : stats.entrySet()) {
+                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            }
+            return sb.toString();
+        }
+        return "Log service not available";
+    }
+    
+    /**
+     * Clear module logs
+     */
+    public void clearModuleLogs() {
+        if (logService != null) {
+            logService.clearLogs();
+            Log.i(TAG, "Module logs cleared via LocalApplicationService");
         }
     }
 }

@@ -98,6 +98,9 @@ public class LSPApplication {
 
         // Initialize LSPatch compatibility layer
         initializeLSPatchCompatibility(context, service);
+        
+        // Validate module execution capabilities
+        validateModuleExecution(context, service);
 
         disableProfile(context);
         Startup.initXposed(false, ActivityThread.currentProcessName(), context.getApplicationInfo().dataDir, service);
@@ -260,6 +263,114 @@ public class LSPApplication {
             
         } catch (Exception e) {
             Log.e(TAG, "Error initializing LSPatch bridge: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Validate module execution capabilities
+     */
+    private static void validateModuleExecution(Context context, ILSPApplicationService service) {
+        try {
+            Log.i(TAG, "Validating module execution capabilities");
+            
+            // Get modules list for validation
+            var modules = service.getLegacyModulesList();
+            if (modules == null || modules.isEmpty()) {
+                Log.w(TAG, "No modules found for validation");
+                return;
+            }
+            
+            Log.i(TAG, "Validating " + modules.size() + " modules");
+            
+            // Use reflection to call the Kotlin validator
+            try {
+                Class<?> validatorClass = Class.forName("org.lsposed.lspatch.loader.validation.ModuleExecutionValidator");
+                var companionField = validatorClass.getField("Companion");
+                var companion = companionField.get(null);
+                
+                var validateMethod = companion.getClass().getMethod("validateModuleExecution", 
+                    android.content.Context.class, 
+                    org.lsposed.lspd.service.ILSPApplicationService.class, 
+                    java.util.List.class);
+                
+                var result = validateMethod.invoke(companion, context, service, modules);
+                
+                // Get validation summary
+                var getSummaryMethod = result.getClass().getMethod("getSummary");
+                var summary = (String) getSummaryMethod.invoke(result);
+                
+                Log.i(TAG, "Module validation result:");
+                String[] lines = summary.split("\n");
+                for (String line : lines) {
+                    Log.i(TAG, line);
+                }
+                
+            } catch (Exception reflectionError) {
+                Log.w(TAG, "Could not use Kotlin validator, using Java fallback: " + reflectionError.getMessage());
+                validateModulesJavaFallback(context, service, modules);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error during module validation: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Java fallback validation for modules
+     */
+    private static void validateModulesJavaFallback(Context context, ILSPApplicationService service, java.util.List<org.lsposed.lspd.models.Module> modules) {
+        Log.i(TAG, "Using Java fallback module validation");
+        
+        int validModules = 0;
+        int invalidModules = 0;
+        
+        for (var module : modules) {
+            try {
+                // Basic validation
+                if (module.apkPath == null || module.apkPath.isEmpty()) {
+                    Log.w(TAG, "Module " + module.packageName + ": Invalid APK path");
+                    invalidModules++;
+                    continue;
+                }
+                
+                var moduleFile = new java.io.File(module.apkPath);
+                if (!moduleFile.exists()) {
+                    Log.w(TAG, "Module " + module.packageName + ": APK file does not exist");
+                    invalidModules++;
+                    continue;
+                }
+                
+                if (module.file == null) {
+                    Log.w(TAG, "Module " + module.packageName + ": PreLoadedApk is null");
+                    invalidModules++;
+                    continue;
+                }
+                
+                if (module.file.preLoadedDexes.isEmpty()) {
+                    Log.w(TAG, "Module " + module.packageName + ": No DEX files loaded");
+                    invalidModules++;
+                    continue;
+                }
+                
+                Log.i(TAG, "Module " + module.packageName + ": Validation passed (" + 
+                      module.file.preLoadedDexes.size() + " DEX files, " + 
+                      module.file.moduleClassNames.size() + " classes)");
+                validModules++;
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error validating module " + module.packageName + ": " + e.getMessage());
+                invalidModules++;
+            }
+        }
+        
+        Log.i(TAG, "Module validation summary: " + validModules + " valid, " + invalidModules + " invalid");
+        
+        // Test XposedBridge functionality
+        try {
+            de.robv.android.xposed.XposedBridge.log("LSPatch module validation test");
+            Log.i(TAG, "XposedBridge functionality test: PASSED");
+        } catch (Exception e) {
+            Log.w(TAG, "XposedBridge functionality test: FAILED - " + e.getMessage());
         }
     }
 
