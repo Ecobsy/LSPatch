@@ -1,211 +1,279 @@
-package org.lsposed.lspatch.service
+package org.lsposed.lspatch.service;
 
-import android.util.Log
-import org.lsposed.lspd.service.ILSPApplicationService
-import java.io.File
-import java.io.FileWriter
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.ConcurrentLinkedQueue
+import android.util.Log;
+import org.lsposed.lspd.service.ILSPApplicationService;
+import java.io.File;
+import java.io.FileWriter;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Enhanced log service for capturing module logs from LSPatch applications
  * This service captures logs from modules running in patched applications
  * and makes them available for export via the LSPatch manager
  */
-class LSPatchLogService private constructor() {
+public class LSPatchLogService {
     
-    companion object {
-        private const val TAG = "LSPatch-LogService"
-        private const val MAX_LOG_ENTRIES = 1000
-        private const val LOG_FILE_PREFIX = "lspatch_module_logs"
-        
-        @Volatile
-        private var INSTANCE: LSPatchLogService? = null
-        
-        fun getInstance(): LSPatchLogService {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: LSPatchLogService().also { INSTANCE = it }
+    private static final String TAG = "LSPatch-LogService";
+    private static final int MAX_LOG_ENTRIES = 1000;
+    private static final String LOG_FILE_PREFIX = "lspatch_module_logs";
+    
+    private static volatile LSPatchLogService INSTANCE = null;
+    
+    public static LSPatchLogService getInstance() {
+        if (INSTANCE == null) {
+            synchronized (LSPatchLogService.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new LSPatchLogService();
+                }
             }
+        }
+        return INSTANCE;
+    }
+    
+    public static class ModuleLogEntry {
+        public final long timestamp;
+        public final String level;
+        public final String tag;
+        public final String message;
+        public final String moduleName;
+        public final String processName;
+        public final Throwable throwable;
+        
+        public ModuleLogEntry(long timestamp, String level, String tag, String message, 
+                            String moduleName, String processName, Throwable throwable) {
+            this.timestamp = timestamp;
+            this.level = level;
+            this.tag = tag;
+            this.message = message;
+            this.moduleName = moduleName;
+            this.processName = processName;
+            this.throwable = throwable;
         }
     }
     
-    data class ModuleLogEntry(
-        val timestamp: Long,
-        val level: String,
-        val tag: String,
-        val message: String,
-        val moduleName: String,
-        val processName: String,
-        val throwable: Throwable? = null
-    )
+    private final ConcurrentLinkedQueue<ModuleLogEntry> logBuffer = new ConcurrentLinkedQueue<>();
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
     
-    private val logBuffer = ConcurrentLinkedQueue<ModuleLogEntry>()
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+    private LSPatchLogService() {
+        // Private constructor for singleton
+    }
     
     /**
      * Log a message from a module
      */
-    fun logModule(level: String, tag: String, message: String, moduleName: String = "unknown", throwable: Throwable? = null) {
+    public void logModule(String level, String tag, String message, String moduleName, Throwable throwable) {
         try {
-            val processName = getCurrentProcessName()
+            String processName = getCurrentProcessName();
             
-            val entry = ModuleLogEntry(
-                timestamp = System.currentTimeMillis(),
-                level = level,
-                tag = tag,
-                message = message,
-                moduleName = moduleName,
-                processName = processName,
-                throwable = throwable
-            )
+            ModuleLogEntry entry = new ModuleLogEntry(
+                System.currentTimeMillis(),
+                level,
+                tag,
+                message,
+                moduleName != null ? moduleName : "unknown",
+                processName,
+                throwable
+            );
             
             // Add to buffer
-            logBuffer.offer(entry)
+            logBuffer.offer(entry);
             
             // Maintain buffer size
-            while (logBuffer.size > MAX_LOG_ENTRIES) {
-                logBuffer.poll()
+            while (logBuffer.size() > MAX_LOG_ENTRIES) {
+                logBuffer.poll();
             }
             
             // Also log to Android Log for immediate visibility
-            when (level.uppercase()) {
-                "D", "DEBUG" -> Log.d("$TAG-$moduleName", message, throwable)
-                "I", "INFO" -> Log.i("$TAG-$moduleName", message, throwable)
-                "W", "WARN", "WARNING" -> Log.w("$TAG-$moduleName", message, throwable)
-                "E", "ERROR" -> Log.e("$TAG-$moduleName", message, throwable)
-                else -> Log.i("$TAG-$moduleName", message, throwable)
+            String logTag = TAG + "-" + entry.moduleName;
+            switch (level.toUpperCase()) {
+                case "D":
+                case "DEBUG":
+                    Log.d(logTag, message, throwable);
+                    break;
+                case "I":
+                case "INFO":
+                    Log.i(logTag, message, throwable);
+                    break;
+                case "W":
+                case "WARN":
+                case "WARNING":
+                    Log.w(logTag, message, throwable);
+                    break;
+                case "E":
+                case "ERROR":
+                    Log.e(logTag, message, throwable);
+                    break;
+                default:
+                    Log.i(logTag, message, throwable);
+                    break;
             }
             
-        } catch (e: Exception) {
+        } catch (Exception e) {
             // Fallback logging
-            Log.e(TAG, "Error logging module message: ${e.message}")
+            Log.e(TAG, "Error logging module message: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Convenience method without throwable
+     */
+    public void logModule(String level, String tag, String message, String moduleName) {
+        logModule(level, tag, message, moduleName, null);
     }
     
     /**
      * Get all captured module logs
      */
-    fun getModuleLogs(): List<ModuleLogEntry> {
-        return logBuffer.toList().sortedByDescending { it.timestamp }
+    public List<ModuleLogEntry> getModuleLogs() {
+        List<ModuleLogEntry> logs = new ArrayList<>(logBuffer);
+        logs.sort((a, b) -> Long.compare(b.timestamp, a.timestamp)); // Sort by timestamp descending
+        return logs;
     }
     
     /**
      * Get logs for a specific module
      */
-    fun getModuleLogs(moduleName: String): List<ModuleLogEntry> {
-        return logBuffer.filter { it.moduleName == moduleName }
-            .sortedByDescending { it.timestamp }
+    public List<ModuleLogEntry> getModuleLogs(String moduleName) {
+        List<ModuleLogEntry> result = new ArrayList<>();
+        for (ModuleLogEntry entry : logBuffer) {
+            if (moduleName.equals(entry.moduleName)) {
+                result.add(entry);
+            }
+        }
+        result.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
+        return result;
     }
     
     /**
      * Export logs to formatted string
      */
-    fun exportLogsToString(): String {
-        return buildString {
-            appendLine("=== LSPatch Module Logs Export ===")
-            appendLine("Generated: ${dateFormat.format(Date())}")
-            appendLine("Total Entries: ${logBuffer.size}")
-            appendLine()
-            
-            val logsByModule = logBuffer.groupBy { it.moduleName }
-            
-            for ((moduleName, logs) in logsByModule) {
-                appendLine("=== MODULE: $moduleName ===")
-                
-                for (log in logs.sortedByDescending { it.timestamp }) {
-                    appendLine("[${dateFormat.format(Date(log.timestamp))}] ${log.level}/${log.tag} (${log.processName}): ${log.message}")
-                    
-                    log.throwable?.let { throwable ->
-                        appendLine("Exception: ${throwable.javaClass.simpleName}: ${throwable.message}")
-                        throwable.stackTrace.take(5).forEach { frame ->
-                            appendLine("    at $frame")
-                        }
-                    }
-                    appendLine()
-                }
-                appendLine()
-            }
+    public String exportLogsToString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== LSPatch Module Logs Export ===\n");
+        sb.append("Generated: ").append(dateFormat.format(new Date())).append("\n");
+        sb.append("Total Entries: ").append(logBuffer.size()).append("\n\n");
+        
+        Map<String, List<ModuleLogEntry>> logsByModule = new HashMap<>();
+        for (ModuleLogEntry entry : logBuffer) {
+            logsByModule.computeIfAbsent(entry.moduleName, k -> new ArrayList<>()).add(entry);
         }
+        
+        for (Map.Entry<String, List<ModuleLogEntry>> moduleEntry : logsByModule.entrySet()) {
+            String moduleName = moduleEntry.getKey();
+            List<ModuleLogEntry> logs = moduleEntry.getValue();
+            logs.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
+            
+            sb.append("=== MODULE: ").append(moduleName).append(" ===\n");
+            
+            for (ModuleLogEntry log : logs) {
+                sb.append("[").append(dateFormat.format(new Date(log.timestamp))).append("] ");
+                sb.append(log.level).append("/").append(log.tag);
+                sb.append(" (").append(log.processName).append("): ");
+                sb.append(log.message).append("\n");
+                
+                if (log.throwable != null) {
+                    sb.append("Exception: ").append(log.throwable.getClass().getSimpleName());
+                    sb.append(": ").append(log.throwable.getMessage()).append("\n");
+                    StackTraceElement[] frames = log.throwable.getStackTrace();
+                    for (int i = 0; i < Math.min(5, frames.length); i++) {
+                        sb.append("    at ").append(frames[i]).append("\n");
+                    }
+                }
+                sb.append("\n");
+            }
+            sb.append("\n");
+        }
+        
+        return sb.toString();
     }
     
     /**
      * Save logs to file
      */
-    fun saveLogsToFile(directory: File): File? {
-        return try {
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val fileName = "${LOG_FILE_PREFIX}_$timestamp.txt"
-            val file = File(directory, fileName)
+    public File saveLogsToFile(File directory) {
+        try {
+            SimpleDateFormat fileFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
+            String timestamp = fileFormat.format(new Date());
+            String fileName = LOG_FILE_PREFIX + "_" + timestamp + ".txt";
+            File file = new File(directory, fileName);
             
-            FileWriter(file).use { writer ->
-                writer.write(exportLogsToString())
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(exportLogsToString());
             }
             
-            Log.i(TAG, "Logs saved to: ${file.absolutePath}")
-            file
+            Log.i(TAG, "Logs saved to: " + file.getAbsolutePath());
+            return file;
             
-        } catch (e: Exception) {
-            Log.e(TAG, "Error saving logs to file: ${e.message}")
-            null
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving logs to file: " + e.getMessage());
+            return null;
         }
     }
     
     /**
      * Clear all logs
      */
-    fun clearLogs() {
-        logBuffer.clear()
-        Log.i(TAG, "Module logs cleared")
+    public void clearLogs() {
+        logBuffer.clear();
+        Log.i(TAG, "Module logs cleared");
     }
     
     /**
      * Get current process name
      */
-    private fun getCurrentProcessName(): String {
-        return try {
-            val pid = android.os.Process.myPid()
-            val manager = android.app.ActivityManager::class.java
-            val getRunningAppProcesses = manager.getMethod("getRunningAppProcesses")
-            
-            // This is a simplified approach - in practice you might want to use different methods
-            "process_$pid"
-        } catch (e: Exception) {
-            "unknown_process"
+    private String getCurrentProcessName() {
+        try {
+            int pid = android.os.Process.myPid();
+            return "process_" + pid;
+        } catch (Exception e) {
+            return "unknown_process";
         }
     }
     
     /**
      * Integration with LSPatch service for log forwarding
      */
-    fun attachToLSPatchService(service: ILSPApplicationService?) {
+    public void attachToLSPatchService(ILSPApplicationService service) {
         try {
             if (service != null) {
-                Log.i(TAG, "LSPatch log service attached to application service")
+                Log.i(TAG, "LSPatch log service attached to application service");
                 
                 // Log service startup
-                logModule("INFO", TAG, "Module log service started", "LSPatch-Core")
-                logModule("INFO", TAG, "Ready to capture module logs", "LSPatch-Core")
+                logModule("INFO", TAG, "Module log service started", "LSPatch-Core");
+                logModule("INFO", TAG, "Ready to capture module logs", "LSPatch-Core");
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error attaching to LSPatch service: ${e.message}")
+        } catch (Exception e) {
+            Log.e(TAG, "Error attaching to LSPatch service: " + e.getMessage());
         }
     }
     
     /**
      * Get log statistics
      */
-    fun getLogStatistics(): Map<String, Any> {
-        val logs = logBuffer.toList()
-        val moduleStats = logs.groupBy { it.moduleName }.mapValues { it.value.size }
-        val levelStats = logs.groupBy { it.level }.mapValues { it.value.size }
+    public Map<String, Object> getLogStatistics() {
+        List<ModuleLogEntry> logs = new ArrayList<>(logBuffer);
         
-        return mapOf(
-            "totalLogs" to logs.size,
-            "moduleBreakdown" to moduleStats,
-            "levelBreakdown" to levelStats,
-            "oldestLog" to logs.minOfOrNull { it.timestamp },
-            "newestLog" to logs.maxOfOrNull { it.timestamp }
-        )
+        Map<String, Integer> moduleStats = new HashMap<>();
+        Map<String, Integer> levelStats = new HashMap<>();
+        long oldestLog = Long.MAX_VALUE;
+        long newestLog = Long.MIN_VALUE;
+        
+        for (ModuleLogEntry log : logs) {
+            moduleStats.put(log.moduleName, moduleStats.getOrDefault(log.moduleName, 0) + 1);
+            levelStats.put(log.level, levelStats.getOrDefault(log.level, 0) + 1);
+            oldestLog = Math.min(oldestLog, log.timestamp);
+            newestLog = Math.max(newestLog, log.timestamp);
+        }
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalLogs", logs.size());
+        stats.put("moduleBreakdown", moduleStats);
+        stats.put("levelBreakdown", levelStats);
+        stats.put("oldestLog", oldestLog == Long.MAX_VALUE ? null : oldestLog);
+        stats.put("newestLog", newestLog == Long.MIN_VALUE ? null : newestLog);
+        
+        return stats;
     }
 }
