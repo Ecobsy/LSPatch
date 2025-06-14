@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -102,7 +102,7 @@ fun SearchAppBar(
         navigationIcon = {
             IconButton(
                 onClick = onBackClick,
-                content = { Icon(Icons.Outlined.ArrowBack, null) }
+                content = { Icon(Icons.AutoMirrored.Outlined.ArrowBack, null) }
             )
         },
         actions = {

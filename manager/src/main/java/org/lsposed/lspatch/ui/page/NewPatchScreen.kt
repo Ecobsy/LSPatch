@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -254,7 +255,7 @@ private fun ConfiguringTopBar(onBackClick: () -> Unit) {
         navigationIcon = {
             IconButton(
                 onClick = onBackClick,
-                content = { Icon(Icons.Outlined.ArrowBack, null) }
+                content = { Icon(Icons.AutoMirrored.Outlined.ArrowBack, null) }
             )
         }
     )

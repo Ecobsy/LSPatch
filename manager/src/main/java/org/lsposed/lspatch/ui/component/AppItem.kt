@@ -3,7 +3,7 @@ package org.lsposed.lspatch.ui.component
 import android.graphics.drawable.GradientDrawable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -84,7 +84,7 @@ private fun AppItemPreview() {
             icon = shape.toBitmap().asImageBitmap(),
             label = "Sample App",
             packageName = "org.lsposed.sample",
-            rightIcon = { Icon(Icons.Filled.ArrowForwardIos, null) }
+            rightIcon = { Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, null) }
         )
     }
 }

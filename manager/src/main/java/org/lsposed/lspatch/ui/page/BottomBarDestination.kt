@@ -2,6 +2,8 @@ package org.lsposed.lspatch.ui.page
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -18,6 +20,6 @@ enum class BottomBarDestination(
     Repo(RepoScreenDestination, R.string.screen_repo, Icons.Filled.GetApp, Icons.Outlined.GetApp),
     Manage(ManageScreenDestination, R.string.screen_manage, Icons.Filled.Dashboard, Icons.Outlined.Dashboard),
     Home(HomeScreenDestination, R.string.app_name, Icons.Filled.Home, Icons.Outlined.Home),
-    Logs(LogsScreenDestination, R.string.screen_logs, Icons.Filled.Assignment, Icons.Outlined.Assignment),
+    Logs(LogsScreenDestination, R.string.screen_logs, Icons.AutoMirrored.Filled.Assignment, Icons.AutoMirrored.Outlined.Assignment),
     Settings(SettingsScreenDestination, R.string.screen_settings, Icons.Filled.Settings, Icons.Outlined.Settings);
 }
