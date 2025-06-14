@@ -1,20 +1,126 @@
+# IDEs
 .project
 .cache
 .settings
-libxposed
 *.iml
-.gradle
+/.idea/
+.vscode/
+
+# Gradle
+.gradle/
+gradle.properties.local
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+gradle-app.setting
+.gradletasknamecache
+
+# Build outputs - root level
+/build/
+/out/
+/captures/
+
+# Build outputs - all modules
+**/build/
+**/bin/
+**/generated/
+**/generated-sources/
+**/obj/
+**/libs/
+**/tmp/
+**/classes/
+**/reports/
+**/kotlin-build/
+**/problems/
+**/local/
+**/cache/
+**/intermediates/
+**/outputs/
+
+# Android specific
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.aar
+.navigation/
+captures/
+
+# Native build artifacts
+/core/external/**/build/
+/core/external/**/obj/
+/core/external/**/.libs/
+/core/external/**/.deps/
+**/cmake-build-*/
+**/CMakeCache.txt
+**/CMakeFiles/
+**/Makefile
+**/cmake_install.cmake
+
+# Compiled class files
+*.class
+
+# JAR files (but keep gradle wrapper)
+*.jar
+!gradle-wrapper.jar
+!**/gradle-wrapper.jar
+
+# IntelliJ
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+.idea/shelf
+
+# Eclipse
+.externalToolBuilders/
+*.launch
+*.pydevproject
+.cproject
+.autotools
+.factorypath
+.buildpath
+.target
+.tern-project
+.texlipse
+.springBeans
+.recommenders/
+
+# Annotation Processing
+.apt_generated/
+.apt_generated_test/
+
+# Scala IDE specific
+.cache-main
+.scala_dependencies
+.worksheet
+
+# macOS
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-/out
-/.idea
+
+# Windows
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Log files
+*.log
+
+# Signing files
+*.hprof
+*.jks
+keystore.properties
+proguard-project.txt
+/proguard/
+signing.properties
+key.properties
+
+# Other
+libxposed
