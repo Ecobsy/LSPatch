@@ -38,13 +38,16 @@ include(
     ":hiddenapi:bridge",
     ":hiddenapi:stubs",
     ":jar",
+    ":libxposed:api",
+    ":libxposed:api:checks",
+    ":libxposed:service",
+    ":libxposed:service:interface",
     ":manager",
     ":meta-loader",
     ":patch",
     ":patch-loader",
     ":services:daemon-service",
     ":services:manager-service",
-    ":services:xposed-service:interface",
     ":share:android",
     ":share:java",
 )
@@ -54,8 +57,11 @@ project(":axml").projectDir = file("core/axml")
 project(":core").projectDir = file("core/core")
 project(":hiddenapi:bridge").projectDir = file("core/hiddenapi/bridge")
 project(":hiddenapi:stubs").projectDir = file("core/hiddenapi/stubs")
+project(":libxposed:api").projectDir = file("libxposed/api/api")
+project(":libxposed:api:checks").projectDir = file("libxposed/api/checks")
+project(":libxposed:service").projectDir = file("libxposed/service/service")
+project(":libxposed:service:interface").projectDir = file("libxposed/service/interface")
 project(":services:daemon-service").projectDir = file("core/services/daemon-service")
 project(":services:manager-service").projectDir = file("core/services/manager-service")
-project(":services:xposed-service:interface").projectDir = file("core/services/xposed-service/interface")
 
 buildCache { local { removeUnusedEntriesAfterDays = 1 } }

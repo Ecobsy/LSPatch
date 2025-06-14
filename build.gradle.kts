@@ -24,24 +24,16 @@ buildscript {
 
 val commitCount = run {
     val repo = FileRepository(rootProject.file(".git"))
-    val refId = repo.refDatabase.exactRef("refs/remotes/origin/master").objectId!!
-    Git(repo).log().add(refId).call().count()
+    val refId = repo.refDatabase.exactRef("refs/remotes/origin/master")?.objectId
+        ?: repo.refDatabase.exactRef("HEAD")?.objectId
+    if (refId != null) {
+        Git(repo).log().add(refId).call().count()
+    } else {
+        1000 // valor por defecto si no se puede obtener
+    }
 }
 
-val (coreCommitCount, coreLatestTag) = FileRepositoryBuilder().setGitDir(rootProject.file(".git/modules/core"))
-    .runCatching {
-        build().use { repo ->
-            val git = Git(repo)
-            val coreCommitCount =
-                git.log()
-                    .add(repo.refDatabase.exactRef("HEAD").objectId)
-                    .call().count() + 4200
-            val ver = git.describe()
-                .setTags(true)
-                .setAbbrev(0).call().removePrefix("v")
-            coreCommitCount to ver
-        }
-    }.getOrNull() ?: (1 to "1.0")
+val (coreCommitCount, coreLatestTag) = (4200 to "1.0")
 
 // sync from https://github.com/JingMatrix/LSPosed/blob/master/build.gradle.kts
 val defaultManagerPackageName by extra("org.lsposed.lspatch")
