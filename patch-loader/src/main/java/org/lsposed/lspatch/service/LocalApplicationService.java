@@ -142,7 +142,9 @@ public class LocalApplicationService extends ILSPApplicationService.Stub {
             status.append("  APK Path: ").append(module.apkPath).append("\n");
             status.append("  File Loaded: ").append(module.file != null).append("\n");
             if (module.file != null) {
-                status.append("  File Path: ").append(module.file.path).append("\n");
+                status.append("  Legacy: ").append(module.file.legacy).append("\n");
+                status.append("  Dex Count: ").append(module.file.preLoadedDexes.size()).append("\n");
+                status.append("  Classes: ").append(module.file.moduleClassNames.size()).append("\n");
             }
             status.append("\n");
         }

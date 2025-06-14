@@ -230,8 +230,8 @@ public class LSPatchHookWrapper {
             beforeMethod.setAccessible(true);
             beforeMethod.invoke(callback, param);
         } catch (Exception e) {
-            // If reflection fails, try direct call (may fail due to protection)
-            callback.beforeHookedMethod(param);
+            // Log the issue instead of calling the protected method directly
+            Log.w(TAG, "Failed to invoke beforeHookedMethod via reflection: " + e.getMessage());
         }
     }
     
@@ -245,8 +245,8 @@ public class LSPatchHookWrapper {
             afterMethod.setAccessible(true);
             afterMethod.invoke(callback, param);
         } catch (Exception e) {
-            // If reflection fails, try direct call (may fail due to protection)
-            callback.afterHookedMethod(param);
+            // Log the issue instead of calling the protected method directly
+            Log.w(TAG, "Failed to invoke afterHookedMethod via reflection: " + e.getMessage());
         }
     }
     
@@ -260,8 +260,9 @@ public class LSPatchHookWrapper {
             replaceMethod.setAccessible(true);
             return replaceMethod.invoke(replacement, param);
         } catch (Exception e) {
-            // If reflection fails, try direct call (may fail due to protection)
-            return replacement.replaceHookedMethod(param);
+            // Log the issue and return null instead of calling the protected method directly
+            Log.w(TAG, "Failed to invoke replaceHookedMethod via reflection: " + e.getMessage());
+            return null;
         }
     }
     
