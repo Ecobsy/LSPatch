@@ -1,10 +1,15 @@
 package org.lsposed.lspatch.ui.viewmodel.logs
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -223,6 +228,45 @@ class LogsViewModel : ViewModel() {
                     }
                     appendLine()
                 }
+            }
+        }
+    }
+
+    fun exportLogsToFile(context: Context? = null) {
+        viewModelScope.launch {
+            try {
+                val logsContent = exportLogs()
+                val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+                val timestamp = dateFormat.format(Date())
+                val fileName = "lspatch_logs_$timestamp.txt"
+                
+                // Si tenemos contexto, intentamos usar el directorio de archivos de la app
+                context?.let { ctx ->
+                    val file = File(ctx.getExternalFilesDir(null), fileName)
+                    file.writeText(logsContent)
+                    
+                    // Crear Intent para compartir el archivo
+                    val uri = FileProvider.getUriForFile(
+                        ctx,
+                        "${ctx.packageName}.fileprovider",
+                        file
+                    )
+                    
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_SUBJECT, "LSPatch Logs - $timestamp")
+                        putExtra(Intent.EXTRA_TEXT, "Logs exportados desde LSPatch Manager")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    
+                    val chooserIntent = Intent.createChooser(shareIntent, "Exportar logs")
+                    chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    ctx.startActivity(chooserIntent)
+                }
+            } catch (e: Exception) {
+                // Log the error - en una implementación real podríamos mostrar un mensaje de error
+                e.printStackTrace()
             }
         }
     }

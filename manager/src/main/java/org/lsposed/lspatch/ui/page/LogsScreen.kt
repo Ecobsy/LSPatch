@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +39,7 @@ import java.util.*
 @Destination
 @Composable
 fun LogsScreen() {
+    val context = LocalContext.current
     val viewModel: LogsViewModel = viewModel()
     val logs by viewModel.logs.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -68,7 +70,7 @@ fun LogsScreen() {
                         DropdownMenuItem(
                             text = { Text("Exportar logs") },
                             onClick = {
-                                // TODO: Implementar exportación
+                                viewModel.exportLogsToFile(context)
                                 showDropdown = false
                             },
                             leadingIcon = { Icon(Icons.Default.GetApp, contentDescription = null) }
