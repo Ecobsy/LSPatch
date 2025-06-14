@@ -15,24 +15,22 @@ import android.util.Log;
 
 import org.lsposed.lspatch.loader.util.FileUtils;
 import org.lsposed.lspatch.loader.util.XLog;
+import org.lsposed.lspatch.loader.Startup;
+import org.lsposed.lspatch.loader.XposedHelpers;
+import org.lsposed.lspatch.loader.HiddenApiBridge;
 import org.lsposed.lspatch.service.LocalApplicationService;
 import org.lsposed.lspatch.service.RemoteApplicationService;
 import org.lsposed.lspatch.compat.LSPatchCompat;
 import org.lsposed.lspatch.compat.LSPatchBridge;
-import org.lsposed.lspatch.compat.LSPatchPreferences;
-import org.lsposed.lspatch.compat.LSPatchHookWrapper;
 import org.lsposed.lspatch.compat.LSPatchFeatureValidator;
 import org.lsposed.lspatch.service.LSPatchModuleDiagnostics;
 import org.lsposed.lspatch.service.LSPatchCompatibilityReporter;
-
-// Xposed framework imports for embedded module loading
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
-
-// Reflection imports for dynamic module loading
-import java.lang.reflect.Method;
+import org.lsposed.lspd.service.ILSPApplicationService;
 
 import org.json.JSONObject;
+
+import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -591,12 +590,12 @@ public class LSPApplication {
                 Log.w(TAG, "WaEnhancer classes not found - module not embedded");
             } catch (Exception e) {
                 Log.e(TAG, "Failed to load embedded WaEnhancer: " + e.getMessage());
-                Log.e(TAG, e);
+                Log.e(TAG, "Error in profile handling", e);
             }
             
         } catch (Exception e) {
             Log.e(TAG, "Error in loadEmbeddedWaEnhancer: " + e.getMessage());
-            Log.e(TAG, e);
+            Log.e(TAG, "Error in disableProfile", e);
         }
     }
 

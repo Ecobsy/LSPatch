@@ -151,13 +151,9 @@ class LogCollector {
             
             val (timeStr, levelStr, tag, message) = match.destructured
             
-            // Parse timestamp (add current year)
-            val calendar = Calendar.getInstance()
-            val currentYear = calendar.get(Calendar.YEAR)
-            val fullTimeStr = "$currentYear-$timeStr"
-            val fullDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+            // Parse timestamp using the provided dateFormat
             val timestamp = try {
-                fullDateFormat.parse(fullTimeStr)?.time ?: System.currentTimeMillis()
+                dateFormat.parse(timeStr)?.time ?: System.currentTimeMillis()
             } catch (e: Exception) {
                 System.currentTimeMillis()
             }

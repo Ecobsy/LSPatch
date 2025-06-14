@@ -70,7 +70,6 @@ fun Project.configureBaseExtension() {
     extensions.findByType(BaseExtension::class)?.run {
         compileSdkVersion(androidCompileSdkVersion)
         ndkVersion = androidCompileNdkVersion
-        buildToolsVersion = androidBuildToolsVersion
 
         externalNativeBuild.cmake {
             version = "3.28.1+"
