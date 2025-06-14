@@ -33,6 +33,7 @@ import hidden.HiddenApiBridge;
  * Provides access to resources from a certain path (usually the module's own path).
  */
 public class XModuleResources extends Resources {
+	@SuppressWarnings("deprecation")
 	private XModuleResources(AssetManager assets, DisplayMetrics metrics, Configuration config) {
 		super(assets, metrics, config);
 	}

@@ -46,6 +46,7 @@ public class LSPLoader {
             android.util.Log.i(TAG, "Found embedded WaEnhancer, initializing...");
             
             // Create instance of WaEnhancer
+            @SuppressWarnings("deprecation")
             Object waenhancerInstance = waenhancerClass.newInstance();
             
             // Call the handleLoadPackage method

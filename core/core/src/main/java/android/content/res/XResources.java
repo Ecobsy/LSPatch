@@ -675,6 +675,7 @@ public class XResources extends XResourcesSuperClass {
 
 	/** @hide */
 	@Override
+	@SuppressWarnings("deprecation")
 	public int getColor(int id) throws NotFoundException {
 		Object replacement = getReplacement(id);
 		if (replacement instanceof Integer) {
@@ -689,6 +690,7 @@ public class XResources extends XResourcesSuperClass {
 
 	/** @hide */
 	@Override
+	@SuppressWarnings("deprecation")
 	public ColorStateList getColorStateList(int id) throws NotFoundException {
 		Object replacement = getReplacement(id);
 		if (replacement instanceof ColorStateList) {
@@ -755,6 +757,7 @@ public class XResources extends XResourcesSuperClass {
 
 	/** @hide */
 	@Override
+	@SuppressWarnings("deprecation")
 	public Drawable getDrawable(int id) throws NotFoundException {
 		try {
 			if (incrementMethodDepth("getDrawable") == 1) {
@@ -807,6 +810,7 @@ public class XResources extends XResourcesSuperClass {
 
 	/** @hide */
 	@Override
+	@SuppressWarnings("deprecation")
 	public Drawable getDrawableForDensity(int id, int density) throws NotFoundException {
 		try {
 			if (incrementMethodDepth("getDrawableForDensity") == 1) {
@@ -997,6 +1001,7 @@ public class XResources extends XResourcesSuperClass {
 
 	/** @hide */
 	@Override
+	@SuppressWarnings("deprecation")
 	public Movie getMovie(int id) throws NotFoundException {
 		Object replacement = getReplacement(id);
 		if (replacement instanceof XResForwarder) {

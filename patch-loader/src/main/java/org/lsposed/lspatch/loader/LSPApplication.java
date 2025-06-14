@@ -568,6 +568,7 @@ public class LSPApplication {
                     true, appLoadedApk.getClassLoader());
                 
                 // Create instance and initialize
+                @SuppressWarnings("deprecation")
                 Object waenhancerInstance = waenhancerClass.newInstance();
                 
                 // Create LoadPackageParam for WaEnhancer

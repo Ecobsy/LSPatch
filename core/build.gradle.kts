@@ -118,4 +118,9 @@ subprojects {
             targetCompatibility = androidTargetCompatibility
         }
     }
+    
+    // Configure Java compilation options to show deprecation and unchecked warnings
+    tasks.withType(JavaCompile::class.java) {
+        options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
+    }
 }
