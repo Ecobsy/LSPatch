@@ -8,9 +8,6 @@
 
 # Gradle
 .gradle/
-gradle.properties.local
-/local.properties
-gradle-app.setting
 .gradletasknamecache
 
 # Build outputs - root level
@@ -20,11 +17,7 @@ gradle-app.setting
 
 # Build outputs - all modules
 **/build/
-**/bin/
-**/generated/
-**/generated-sources/
 **/obj/
-**/libs/
 **/tmp/
 **/classes/
 **/reports/
@@ -49,7 +42,6 @@ captures/
 # Native build artifacts
 /core/external/**/build/
 /core/external/**/obj/
-/core/external/**/.libs/
 /core/external/**/.deps/
 **/cmake-build-*/
 **/CMakeCache.txt
@@ -57,13 +49,8 @@ captures/
 **/Makefile
 **/cmake_install.cmake
 
-# Compiled class files
-*.class
 
 # JAR files (but keep gradle wrapper)
-*.jar
-!gradle-wrapper.jar
-!**/gradle-wrapper.jar
 
 # IntelliJ
 .idea/workspace.xml
