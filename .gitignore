@@ -7,25 +7,19 @@
 .vscode/
 
 # Gradle
-.gradle/
 .gradletasknamecache
 
 # Build outputs - root level
-/build/
 /out/
 /captures/
 
 # Build outputs - all modules
-**/build/
-**/obj/
 **/tmp/
-**/classes/
 **/reports/
 **/kotlin-build/
 **/problems/
 **/local/
 **/cache/
-**/intermediates/
 **/outputs/
 
 # Android specific
@@ -41,13 +35,8 @@ captures/
 
 # Native build artifacts
 /core/external/**/build/
-/core/external/**/obj/
-/core/external/**/.deps/
 **/cmake-build-*/
 **/CMakeCache.txt
-**/CMakeFiles/
-**/Makefile
-**/cmake_install.cmake
 
 
 # JAR files (but keep gradle wrapper)
