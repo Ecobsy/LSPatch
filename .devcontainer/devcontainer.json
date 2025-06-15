@@ -6,10 +6,10 @@
       "version": "latest"
     },
     "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "configureZshAsDefaultShell": true,
-      "installOhMyZsh": true,
-      "installOhMyZshConfig": true,
+      "installZsh": false,
+      "configureZshAsDefaultShell": false,
+      "installOhMyZsh": false,
+      "installOhMyZshConfig": false,
       "upgradePackages": true,
       "username": "vscode",
       "userUid": 1000,
@@ -22,29 +22,21 @@
     "ghcr.io/devcontainers/features/python:1": {
       "installTools": true
     },
-    "ghcr.io/duduribeiro/devcontainer-features/neovim:1.0.1": {},
     "ghcr.io/NordcomInc/devcontainer-features/android-sdk:1": {
       "platform": "35",
       "build_tools": "35.0.0"
     },
     "ghcr.io/devcontainers-extra/features/cmake:1": {},
     "ghcr.io/devcontainers-extra/features/ninja-asdf:2": {},
-    "ghcr.io/devcontainers-community/features/bazel:1": {},
     "ghcr.io/devcontainers-extra/features/gradle-sdkman:2": {
       "version": "8.13",
       "jdkVer": "21",
       "jdkDistro": "tem"
     },
-    "ghcr.io/duduribeiro/devcontainer-features/tmux:latest": {
-      "version": "3.4"
-    },
-    "ghcr.io/georgofenbeck/features/lazygit-linuxbinary:latest": {}
-  },
   "customizations": {
     "vscode": {
       "settings": {
         "eslint.alwaysShowStatus": true,
-        "terminal.integrated.defaultProfile.linux": "zsh",
         "workbench.iconTheme": "a-file-icon-vscode",
         "workbench.colorTheme": "Atom Material Theme",
         "editor.fontFamily": "Consolas, 'Courier New', monospace, 'Hack Nerd Font Mono'",
@@ -98,12 +90,9 @@
       "extensions": [
         "tobiasalthoff.atom-material-theme",
         "vscjava.vscode-java-pack",
-        "editorconfig.editorconfig",
         "gruntfuggly.todo-tree",
         "eamodio.gitlens",
         "naumovs.color-highlight",
-        "ms-azuretools.vscode-docker",
-        "mhutchie.git-graph",
         "ms-python.python",
         "ms-python.vscode-pylance",
         "meezilla.json",
